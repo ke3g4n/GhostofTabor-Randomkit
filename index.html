@@ -1,191 +1,254 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Ghost of Tabor — Random Kit Picker</title>
-<style>
-  body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; padding:20px; background:#0f1724; color:#e6eef8; }
-  .container { max-width:900px; margin:0 auto; }
-  h1 { margin:0 0 12px 0; }
-  .grid { display:grid; grid-template-columns: 1fr 320px; gap:20px; align-items:start; }
-  .panel { background:#0b1220; padding:14px; border-radius:8px; box-shadow: 0 6px 18px rgba(2,6,23,.6); }
-  .toggles { display:flex; flex-direction:column; gap:10px; }
-  .cat { border-bottom:1px solid rgba(255,255,255,.03); padding-bottom:10px; margin-bottom:10px; }
-  label { display:flex; align-items:center; gap:10px; }
-  button { margin-top:12px; padding:10px 14px; border-radius:8px; border: none; cursor:pointer; background:linear-gradient(180deg,#16a34a,#0d8a3b); color:#fff; font-weight:600; }
-  img.preview { max-width:100%; display:block; margin-top:12px; border-radius:6px; }
-  .small { font-size:0.9rem; color:#a8b3c8; }
-  .link { color:#88ddff; text-decoration:underline; }
-  .footer { margin-top:18px; color:#93a1b5; font-size:.9rem; }
-</style>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>GhostofTabor Random Kit Picker</title>
+  <style>
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; margin: 18px; color: #111; }
+    header { display:flex; align-items:center; gap:12px; margin-bottom:18px; }
+    button { padding:8px 14px; border-radius:8px; border:1px solid #888; background:#f2f2f2; cursor:pointer; }
+    #controls { display:flex; gap:20px; align-items:flex-start; }
+    .panel { border:1px solid #ddd; padding:12px; border-radius:8px; min-width:260px; max-height:70vh; overflow:auto; background:#fff; }
+    .category { margin-bottom:10px; }
+    .category h4 { margin:4px 0; display:flex; justify-content:space-between; align-items:center; }
+    .sublist { margin-left:6px; margin-bottom:6px; }
+    #result { margin-top:16px; }
+    img#picked { max-width:80vw; max-height:60vh; border:1px solid #ccc; display:block; margin-top:10px; }
+    .small { font-size:0.9rem; color:#555; }
+    #local-preview { margin-top:12px; max-width:240px; border-radius:6px; border:1px solid #ccc; }
+    footer { margin-top:20px; font-size:0.85rem; color:#555; }
+    .flex-row { display:flex; gap:8px; align-items:center; }
+    .center { text-align:center; }
+  </style>
 </head>
 <body>
-  <div class="container">
-    <h1>Ghost of Tabor — Random Kit Picker</h1>
-    <p class="small">Uses a `manifest.json` file in your repo under <code>images/</code>. See instructions below to auto-generate the manifest.</p>
+  <header>
+    <img src="https://raw.githubusercontent.com/ke3g4n/GhostofTabor-Randomkit/main/images/.keep" alt="" style="width:48px;height:48px;object-fit:contain;filter:grayscale(1);opacity:0.6" onerror="this.style.display='none'"/>
+    <div>
+      <h2 style="margin:0">GhostofTabor — Random Kit Picker</h2>
+      <div class="small">Source: <code>ke3g4n/GhostofTabor-Randomkit</code> (reads your repo's images/ folder)</div>
+    </div>
+  </header>
 
-    <div class="grid">
-      <div class="panel" id="left">
-        <div id="controls">
-          <div id="toggles" class="toggles"></div>
-          <button id="generate">Generate</button>
-          <div id="status" class="small" style="margin-top:10px"></div>
-        </div>
+  <div id="controls" >
+    <div class="panel" id="left-panel">
+      <div class="flex-row" style="justify-content:space-between;">
+        <strong>Categories & Sub-sections</strong>
+        <button id="refresh">Refresh</button>
       </div>
-
-      <div class="panel" id="right">
-        <div id="result">
-          <div id="summary" class="small"></div>
-          <a id="filelink" href="#" target="_blank" class="link"></a>
-          <img id="preview" class="preview" src="" alt="" />
-        </div>
+      <div id="categories-root" style="margin-top:10px;">
+        Loading folders...
       </div>
     </div>
 
-    <div class="footer panel" style="margin-top:16px;">
-      <strong>Setup notes</strong>
-      <ol>
-        <li>Add a `manifest.json` at <code>images/manifest.json</code> (example format shown below).</li>
-        <li>Commit everything and push to GitHub. The index will request the raw manifest via <code>raw.githubusercontent.com</code>.</li>
-        <li>Alternatively, paste a manifest into the console below for quick testing.</li>
-      </ol>
+    <div class="panel" style="flex:1">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <div>
+          <strong>Actions</strong>
+          <div class="small">Toggle subsections to include them in the random pool.</div>
+        </div>
+        <div>
+          <button id="generateBtn">Generate</button>
+          <button id="copyURLBtn">Copy image URL</button>
+        </div>
+      </div>
 
-      <details>
-        <summary>Manifest JSON example</summary>
-        <pre style="white-space:pre-wrap; background:#081224; padding:8px; border-radius:6px; color:#9ecbff;">
-{
-  "Backpacks": {
-    "Buyable": ["bp1.png", "bp2.png"],
-    "FoundInRaid": ["bp_raid1.png"]
-  },
-  "Chestrigs": {
-    "Buyable": ["ch1.png"]
-  },
-  "Helmets": {
-    "BossDrops": ["h_boss1.png"]
-  },
-  "Weapons": {
-    "Buyable": ["w1.png","w2.png"],
-    "FoundInRaid": ["w_raid.png"]
-  }
-}
-        </pre>
-      </details>
+      <div id="result" class="center">
+        <div id="picked-info" class="small" style="margin-top:8px"></div>
+        <img id="picked" src="" alt="picked image" />
+        <div id="picked-fallback" class="small" style="margin-top:8px"></div>
+      </div>
+
+      <hr style="margin:16px 0"/>
+
+      <div>
+        <strong>Uploaded sample preview (local path)</strong>
+        <div class="small">This is the image you uploaded in the chat (local path) — visible locally only:</div>
+        <img id="local-preview" src="/mnt/data/17640333737297885810385431368476.jpg" alt="uploaded local preview" onerror="this.style.display='none'"/>
+      </div>
     </div>
   </div>
 
+  <footer>
+    <div class="small">To host: add this file to your repo root or <code>docs/</code> and enable GitHub Pages (branch: main). For large repos or to avoid rate limits, add a GitHub token to the script.</div>
+  </footer>
+
 <script>
 (async function(){
-  // ======= CONFIG =======
-  const GITHUB_USER = "ke3g4n";
-  const GITHUB_REPO = "GhostofTabor-Randomkit";
-  const BRANCH = "main"; // change if your branch is different
-  const MANIFEST_RAW_URL = `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/${BRANCH}/images/manifest.json`;
+  // -------- CONFIG: repo info --------
+  const GIT_USER = 'ke3g4n';
+  const GIT_REPO = 'GhostofTabor-Randomkit';
+  const BRANCH = 'main'; // change if you use other branch
 
-  // ======= Helpers and UI nodes =======
-  const togglesDiv = document.getElementById('toggles');
-  const generateBtn = document.getElementById('generate');
-  const status = document.getElementById('status');
-  const summary = document.getElementById('summary');
-  const preview = document.getElementById('preview');
-  const filelink = document.getElementById('filelink');
+  // GitHub API base
+  const API_BASE = `https://api.github.com/repos/${GIT_USER}/${GIT_REPO}/contents`;
+  const RAW_BASE = `https://raw.githubusercontent.com/${GIT_USER}/${GIT_REPO}/${BRANCH}`;
 
-  let manifest = null;
+  // DOM
+  const categoriesRoot = document.getElementById('categories-root');
+  const generateBtn = document.getElementById('generateBtn');
+  const pickedImg = document.getElementById('picked');
+  const pickedInfo = document.getElementById('picked-info');
+  const refreshBtn = document.getElementById('refresh');
+  const copyURLBtn = document.getElementById('copyURLBtn');
+  const pickedFallback = document.getElementById('picked-fallback');
 
-  function setStatus(txt, isError=false){
-    status.textContent = txt || "";
-    status.style.color = isError ? "#ff9999" : "#9ecbff";
+  // state
+  let structure = {}; // { Category: { Sub: [file1,file2,..] } }
+
+  // helper: fetch JSON (GitHub API)
+  async function apiFetch(path) {
+    const url = `${API_BASE}/${path}`;
+    const res = await fetch(url);
+    if (!res.ok) {
+      throw new Error(`GitHub API error ${res.status}: ${await res.text()}`);
+    }
+    return res.json();
   }
 
-  // fetch manifest
-  async function loadManifest(){
-    try{
-      setStatus("Loading manifest...");
-      const r = await fetch(MANIFEST_RAW_URL);
-      if(!r.ok) throw new Error("Manifest not found (HTTP " + r.status + ")");
-      manifest = await r.json();
-      setStatus("Manifest loaded.");
-      buildToggles();
-    } catch (e) {
-      setStatus("Error loading manifest: " + e.message, true);
-      // leave manifest null
-      togglesDiv.innerHTML = `<div class="small">Could not load manifest from:<br><code>${MANIFEST_RAW_URL}</code><br>Make sure the file exists and is committed to the repo.</div>`;
-      console.error(e);
+  // recursively build the structure for images/ folder
+  async function buildStructure() {
+    structure = {};
+    categoriesRoot.innerHTML = 'Loading folders...';
+    try {
+      // list top-level inside images
+      const rootList = await apiFetch('images?ref=' + BRANCH);
+      // iterate directories
+      for (const entry of rootList) {
+        if (entry.type === 'dir') {
+          const catName = entry.name;
+          structure[catName] = {};
+          // list subfolders inside category
+          const subs = await apiFetch(`images/${encodeURIComponent(catName)}?ref=${BRANCH}`);
+          for (const s of subs) {
+            if (s.type === 'dir') {
+              const subName = s.name;
+              // list files inside this subfolder
+              const files = await apiFetch(`images/${encodeURIComponent(catName)}/${encodeURIComponent(subName)}?ref=${BRANCH}`);
+              const fileNames = files.filter(fi => fi.type === 'file').map(f => f.name);
+              structure[catName][subName] = fileNames;
+            }
+          }
+        }
+      }
+      renderControls();
+    } catch (err) {
+      categoriesRoot.innerHTML = `<div style="color:crimson">Failed to read repository via GitHub API: ${err.message}</div>
+      <div class="small">Make sure the repository and "images" folder exist and are public.</div>`;
+      console.error(err);
     }
   }
 
-  // build toggles from manifest
-  function buildToggles(){
-    togglesDiv.innerHTML = "";
-    for (const [category, subsections] of Object.entries(manifest)){
-      const catEl = document.createElement('div');
-      catEl.className = "cat";
-      const title = document.createElement('div');
-      title.innerHTML = `<strong>${category}</strong>`;
-      catEl.appendChild(title);
+  // render toggles based on structure
+  function renderControls() {
+    categoriesRoot.innerHTML = '';
+    for (const cat of Object.keys(structure)) {
+      const catDiv = document.createElement('div');
+      catDiv.className = 'category';
+      const h = document.createElement('h4');
+      h.innerHTML = `<span>${cat}</span><small class="small" style="color:#666"></small>`;
+      catDiv.appendChild(h);
 
-      for (const sub of Object.keys(subsections)){
-        const id = `chk_${category}_${sub}`.replace(/\s+/g,'_');
+      const subsDiv = document.createElement('div');
+      subsDiv.className = 'sublist';
+      for (const sub of Object.keys(structure[cat])) {
         const label = document.createElement('label');
-        label.innerHTML = `
-          <input type="checkbox" id="${id}" data-cat="${category}" data-sub="${sub}" checked>
-          <span>${sub} <span style="color:#8ea9c4; font-size:.85rem">(${subsections[sub].length})</span></span>
-        `;
-        catEl.appendChild(label);
+        label.style.display = 'block';
+        label.style.marginBottom = '6px';
+
+        const cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.checked = true;
+        cb.dataset.category = cat;
+        cb.dataset.sub = sub;
+
+        const text = document.createTextNode(' ' + sub + ` (${structure[cat][sub].length})`);
+        label.appendChild(cb);
+        label.appendChild(text);
+        subsDiv.appendChild(label);
       }
-      togglesDiv.appendChild(catEl);
+      catDiv.appendChild(subsDiv);
+      categoriesRoot.appendChild(catDiv);
     }
+    if (Object.keys(structure).length === 0) categoriesRoot.innerHTML = '<div class="small">No categories found in images/</div>';
   }
 
-  // pick random item
-  function pickRandom(){
-    const enabledSubs = [];
-    const checks = togglesDiv.querySelectorAll('input[type=checkbox]');
-    checks.forEach(ch => { if(ch.checked) enabledSubs.push({cat:ch.dataset.cat, sub:ch.dataset.sub}); });
-
-    if(enabledSubs.length === 0){
-      setStatus("No subsections selected. Please enable at least one toggle.", true);
-      return null;
-    }
-
-    // Choose random category-sub pair, weighted by number of files
-    // Build an array of choices that includes each file for weighting
-    const weighted = [];
-    for (const e of enabledSubs){
-      const files = manifest[e.cat][e.sub] || [];
-      for (const f of files){
-        weighted.push({ cat: e.cat, sub: e.sub, file: f });
+  // find selected subfolders
+  function getSelectedSubs() {
+    const boxes = Array.from(document.querySelectorAll('#categories-root input[type="checkbox"]'));
+    const picked = {};
+    for (const b of boxes) {
+      if (b.checked) {
+        const cat = b.dataset.category;
+        const sub = b.dataset.sub;
+        if (!picked[cat]) picked[cat] = [];
+        picked[cat].push(sub);
       }
     }
-    if(weighted.length === 0){
-      setStatus("No files available in enabled subsections.", true);
-      return null;
-    }
-
-    const choice = weighted[Math.floor(Math.random() * weighted.length)];
-    return choice;
+    return picked;
   }
 
-  // when generate clicked
-  generateBtn.addEventListener('click', () => {
-    const picked = pickRandom();
-    if(!picked) return;
-    const rawUrl = `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/${BRANCH}/images/${encodeURIComponent(picked.cat)}/${encodeURIComponent(picked.sub)}/${encodeURIComponent(picked.file)}`;
-    summary.textContent = `${picked.cat} / ${picked.sub} → ${picked.file}`;
-    filelink.href = rawUrl;
-    filelink.textContent = "Open raw file";
-    preview.src = rawUrl;
-    preview.alt = picked.file;
-    setStatus("Generated one item.");
-  });
+  // pick random element from array
+  function sample(arr) { return arr[Math.floor(Math.random()*arr.length)]; }
 
-  // try load manifest on page load
-  await loadManifest();
+  // generate random pick and display
+  async function generate() {
+    pickedImg.src = '';
+    pickedInfo.textContent = '';
+    pickedFallback.textContent = '';
+    const selected = getSelectedSubs();
+    const catsWithSelections = Object.keys(selected).filter(c => selected[c].length > 0);
+    if (catsWithSelections.length === 0) {
+      alert('Please enable at least one sub-section.');
+      return;
+    }
 
-  // Helpful dev note: you can paste a manifest object into console:
-  // window.manifest = { ... }; buildToggles();
-  window._debug = { MANIFEST_RAW_URL };
+    // pick category first
+    const chosenCat = sample(catsWithSelections);
+    // pick one selected sub
+    const chosenSub = sample(selected[chosenCat]);
+
+    // list files in the repo structure we already built (structure[chosenCat][chosenSub])
+    const files = structure[chosenCat] && structure[chosenCat][chosenSub] ? structure[chosenCat][chosenSub] : [];
+    if (!files || files.length === 0) {
+      alert('No files found in selected folder: ' + chosenCat + '/' + chosenSub);
+      return;
+    }
+
+    const chosenFile = sample(files);
+
+    const rawUrl = `${RAW_BASE}/images/${encodeURIComponent(chosenCat)}/${encodeURIComponent(chosenSub)}/${encodeURIComponent(chosenFile)}`;
+
+    // show info & image
+    pickedInfo.textContent = `${chosenCat} → ${chosenSub} → ${chosenFile}`;
+    pickedImg.src = rawUrl;
+    pickedImg.onload = () => { pickedFallback.textContent = ''; }
+    pickedImg.onerror = () => {
+      pickedFallback.textContent = 'Failed to load image from GitHub raw URL. Click copy and open the URL in a new tab.';
+    }
+    // store last URL for copy
+    pickedImg.dataset.lastUrl = rawUrl;
+  }
+
+  // copy image URL
+  function copyImageURL() {
+    const url = pickedImg.dataset.lastUrl;
+    if (!url) { alert('No image selected yet.'); return; }
+    navigator.clipboard?.writeText(url).then(() => {
+      copyURLBtn.textContent = 'Copied!';
+      setTimeout(()=>copyURLBtn.textContent = 'Copy image URL', 1200);
+    }).catch(()=>alert('Copy failed — open the URL manually: ' + url));
+  }
+
+  // handlers
+  refreshBtn.addEventListener('click', buildStructure);
+  generateBtn.addEventListener('click', generate);
+  copyURLBtn.addEventListener('click', copyImageURL);
+
+  // initial load
+  await buildStructure();
+
 })();
 </script>
 </body>
