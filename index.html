@@ -1,255 +1,138 @@
 <!doctype html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>GhostofTabor Random Kit Picker</title>
-  <style>
-    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; margin: 18px; color: #111; }
-    header { display:flex; align-items:center; gap:12px; margin-bottom:18px; }
-    button { padding:8px 14px; border-radius:8px; border:1px solid #888; background:#f2f2f2; cursor:pointer; }
-    #controls { display:flex; gap:20px; align-items:flex-start; }
-    .panel { border:1px solid #ddd; padding:12px; border-radius:8px; min-width:260px; max-height:70vh; overflow:auto; background:#fff; }
-    .category { margin-bottom:10px; }
-    .category h4 { margin:4px 0; display:flex; justify-content:space-between; align-items:center; }
-    .sublist { margin-left:6px; margin-bottom:6px; }
-    #result { margin-top:16px; }
-    img#picked { max-width:80vw; max-height:60vh; border:1px solid #ccc; display:block; margin-top:10px; }
-    .small { font-size:0.9rem; color:#555; }
-    #local-preview { margin-top:12px; max-width:240px; border-radius:6px; border:1px solid #ccc; }
-    footer { margin-top:20px; font-size:0.85rem; color:#555; }
-    .flex-row { display:flex; gap:8px; align-items:center; }
-    .center { text-align:center; }
-  </style>
+<meta charset="utf-8">
+<title>Ghost of Tabor – Random Kit Generator</title>
+<style>
+    body { font-family: Arial; padding: 20px; }
+    h2 { margin-bottom: 4px; }
+    .category-box { border: 1px solid #ccc; padding: 10px; margin-bottom: 20px; border-radius: 8px; }
+    .item { margin-top: 10px; }
+    img { max-width: 300px; margin-top: 8px; border: 1px solid #888; border-radius: 6px; }
+    button { padding: 10px 20px; margin: 15px 0; font-size: 16px; }
+</style>
 </head>
 <body>
-  <header>
-    <img src="https://raw.githubusercontent.com/ke3g4n/GhostofTabor-Randomkit/main/images/.keep" alt="" style="width:48px;height:48px;object-fit:contain;filter:grayscale(1);opacity:0.6" onerror="this.style.display='none'"/>
-    <div>
-      <h2 style="margin:0">GhostofTabor — Random Kit Picker</h2>
-      <div class="small">Source: <code>ke3g4n/GhostofTabor-Randomkit</code> (reads your repo's images/ folder)</div>
-    </div>
-  </header>
 
-  <div id="controls" >
-    <div class="panel" id="left-panel">
-      <div class="flex-row" style="justify-content:space-between;">
-        <strong>Categories & Sub-sections</strong>
-        <button id="refresh">Refresh</button>
-      </div>
-      <div id="categories-root" style="margin-top:10px;">
-        Loading folders...
-      </div>
-    </div>
+<h1>Ghost of Tabor – Random Kit Generator</h1>
+<p>Select subsections to include. Each click will generate:</p>
 
-    <div class="panel" style="flex:1">
-      <div style="display:flex; justify-content:space-between; align-items:center;">
-        <div>
-          <strong>Actions</strong>
-          <div class="small">Toggle subsections to include them in the random pool.</div>
-        </div>
-        <div>
-          <button id="generateBtn">Generate</button>
-          <button id="copyURLBtn">Copy image URL</button>
-        </div>
-      </div>
+<ul>
+  <li>1 Backpack</li>
+  <li>1 Chestrig</li>
+  <li>1 Helmat</li>
+  <li>1 Weapon</li>
+</ul>
 
-      <div id="result" class="center">
-        <div id="picked-info" class="small" style="margin-top:8px"></div>
-        <img id="picked" src="" alt="picked image" />
-        <div id="picked-fallback" class="small" style="margin-top:8px"></div>
-      </div>
+<h2>Subsection Toggles</h2>
+<div id="toggles">Loading subsections...</div>
 
-      <hr style="margin:16px 0"/>
+<button id="generateBtn">Generate Loadout</button>
 
-      <div>
-        <strong>Uploaded sample preview (local path)</strong>
-        <div class="small">This is the image you uploaded in the chat (local path) — visible locally only:</div>
-        <img id="local-preview" src="/mnt/data/17640333737297885810385431368476.jpg" alt="uploaded local preview" onerror="this.style.display='none'"/>
-      </div>
-    </div>
-  </div>
-
-  <footer>
-    <div class="small">To host: add this file to your repo root or <code>docs/</code> and enable GitHub Pages (branch: main). For large repos or to avoid rate limits, add a GitHub token to the script.</div>
-  </footer>
+<h2>Results</h2>
+<div id="results"></div>
 
 <script>
-(async function(){
-  // -------- CONFIG: repo info --------
-  const GIT_USER = 'ke3g4n';
-  const GIT_REPO = 'GhostofTabor-Randomkit';
-  const BRANCH = 'main'; // change if you use other branch
+// CONFIG ------------------------------------------------------------
+const USER = "ke3g4n";
+const REPO = "GhostofTabor-Randomkit";
+const BRANCH = "main";
+const RAW = `https://raw.githubusercontent.com/${USER}/${REPO}/${BRANCH}/images`;
 
-  // GitHub API base
-  const API_BASE = `https://api.github.com/repos/${GIT_USER}/${GIT_REPO}/contents`;
-  const RAW_BASE = `https://raw.githubusercontent.com/${GIT_USER}/${GIT_REPO}/${BRANCH}`;
+const CATEGORIES = ["Backpacks", "Chestrigs", "Helmats", "Weapons"];
 
-  // DOM
-  const categoriesRoot = document.getElementById('categories-root');
-  const generateBtn = document.getElementById('generateBtn');
-  const pickedImg = document.getElementById('picked');
-  const pickedInfo = document.getElementById('picked-info');
-  const refreshBtn = document.getElementById('refresh');
-  const copyURLBtn = document.getElementById('copyURLBtn');
-  const pickedFallback = document.getElementById('picked-fallback');
+// UI references
+const togglesDiv = document.getElementById("toggles");
+const resultsDiv = document.getElementById("results");
 
-  // state
-  let structure = {}; // { Category: { Sub: [file1,file2,..] } }
-
-  // helper: fetch JSON (GitHub API)
-  async function apiFetch(path) {
-    const url = `${API_BASE}/${path}`;
+// Fetch folder contents from GitHub API
+async function listDir(path) {
+    const url = `https://api.github.com/repos/${USER}/${REPO}/contents/${path}?ref=${BRANCH}`;
     const res = await fetch(url);
-    if (!res.ok) {
-      throw new Error(`GitHub API error ${res.status}: ${await res.text()}`);
-    }
-    return res.json();
-  }
+    if (!res.ok) return [];
+    return await res.json();
+}
 
-  // recursively build the structure for images/ folder
-  async function buildStructure() {
-    structure = {};
-    categoriesRoot.innerHTML = 'Loading folders...';
-    try {
-      // list top-level inside images
-      const rootList = await apiFetch('images?ref=' + BRANCH);
-      // iterate directories
-      for (const entry of rootList) {
-        if (entry.type === 'dir') {
-          const catName = entry.name;
-          structure[catName] = {};
-          // list subfolders inside category
-          const subs = await apiFetch(`images/${encodeURIComponent(catName)}?ref=${BRANCH}`);
-          for (const s of subs) {
-            if (s.type === 'dir') {
-              const subName = s.name;
-              // list files inside this subfolder
-              const files = await apiFetch(`images/${encodeURIComponent(catName)}/${encodeURIComponent(subName)}?ref=${BRANCH}`);
-              const fileNames = files.filter(fi => fi.type === 'file').map(f => f.name);
-              structure[catName][subName] = fileNames;
-            }
-          }
+// Auto-detect existing subsections and build toggles
+async function loadSubsections() {
+    togglesDiv.innerHTML = "";
+    window.subsections = {};
+
+    for (const cat of CATEGORIES) {
+        const catPath = `images/${cat}`;
+        const subs = await listDir(catPath);
+
+        const validSubs = subs.filter(s => s.type === "dir").map(s => s.name);
+        window.subsections[cat] = validSubs;
+
+        const div = document.createElement("div");
+        div.className = "category-box";
+        div.innerHTML = `<h3>${cat}</h3>`;
+
+        validSubs.forEach(sub => {
+            const id = `${cat}-${sub}`;
+            div.innerHTML += `
+                <label>
+                    <input type="checkbox" id="${id}" checked>
+                    ${sub}
+                </label><br>
+            `;
+        });
+
+        togglesDiv.appendChild(div);
+    }
+}
+
+// Pick random from array
+function pick(arr) {
+    return arr[Math.floor(Math.random() * arr.length)];
+}
+
+// Generate one item per category
+async function generate() {
+    resultsDiv.innerHTML = "";
+
+    for (const cat of CATEGORIES) {
+        const subs = window.subsections[cat];
+        const enabledSubs = subs.filter(sub => {
+            const id = `${cat}-${sub}`;
+            const box = document.getElementById(id);
+            return box && box.checked;
+        });
+
+        if (enabledSubs.length === 0) {
+            resultsDiv.innerHTML += `<p><b>${cat}:</b> No subsections enabled.</p>`;
+            continue;
         }
-      }
-      renderControls();
-    } catch (err) {
-      categoriesRoot.innerHTML = `<div style="color:crimson">Failed to read repository via GitHub API: ${err.message}</div>
-      <div class="small">Make sure the repository and "images" folder exist and are public.</div>`;
-      console.error(err);
+
+        const chosenSub = pick(enabledSubs);
+
+        const files = await listDir(`images/${cat}/${chosenSub}`);
+        const realFiles = files.filter(f => f.type === "file");
+
+        if (realFiles.length === 0) {
+            resultsDiv.innerHTML += `<p><b>${cat}:</b> No images found in ${chosenSub}.</p>`;
+            continue;
+        }
+
+        const file = pick(realFiles);
+        const url = `${RAW}/${cat}/${chosenSub}/${file.name}`;
+
+        resultsDiv.innerHTML += `
+            <div class="item">
+                <h3>${cat}</h3>
+                <p>Subsection: <b>${chosenSub}</b><br>File: ${file.name}</p>
+                <img src="${url}">
+            </div>
+        `;
     }
-  }
+}
 
-  // render toggles based on structure
-  function renderControls() {
-    categoriesRoot.innerHTML = '';
-    for (const cat of Object.keys(structure)) {
-      const catDiv = document.createElement('div');
-      catDiv.className = 'category';
-      const h = document.createElement('h4');
-      h.innerHTML = `<span>${cat}</span><small class="small" style="color:#666"></small>`;
-      catDiv.appendChild(h);
+document.getElementById("generateBtn").onclick = generate;
 
-      const subsDiv = document.createElement('div');
-      subsDiv.className = 'sublist';
-      for (const sub of Object.keys(structure[cat])) {
-        const label = document.createElement('label');
-        label.style.display = 'block';
-        label.style.marginBottom = '6px';
-
-        const cb = document.createElement('input');
-        cb.type = 'checkbox';
-        cb.checked = true;
-        cb.dataset.category = cat;
-        cb.dataset.sub = sub;
-
-        const text = document.createTextNode(' ' + sub + ` (${structure[cat][sub].length})`);
-        label.appendChild(cb);
-        label.appendChild(text);
-        subsDiv.appendChild(label);
-      }
-      catDiv.appendChild(subsDiv);
-      categoriesRoot.appendChild(catDiv);
-    }
-    if (Object.keys(structure).length === 0) categoriesRoot.innerHTML = '<div class="small">No categories found in images/</div>';
-  }
-
-  // find selected subfolders
-  function getSelectedSubs() {
-    const boxes = Array.from(document.querySelectorAll('#categories-root input[type="checkbox"]'));
-    const picked = {};
-    for (const b of boxes) {
-      if (b.checked) {
-        const cat = b.dataset.category;
-        const sub = b.dataset.sub;
-        if (!picked[cat]) picked[cat] = [];
-        picked[cat].push(sub);
-      }
-    }
-    return picked;
-  }
-
-  // pick random element from array
-  function sample(arr) { return arr[Math.floor(Math.random()*arr.length)]; }
-
-  // generate random pick and display
-  async function generate() {
-    pickedImg.src = '';
-    pickedInfo.textContent = '';
-    pickedFallback.textContent = '';
-    const selected = getSelectedSubs();
-    const catsWithSelections = Object.keys(selected).filter(c => selected[c].length > 0);
-    if (catsWithSelections.length === 0) {
-      alert('Please enable at least one sub-section.');
-      return;
-    }
-
-    // pick category first
-    const chosenCat = sample(catsWithSelections);
-    // pick one selected sub
-    const chosenSub = sample(selected[chosenCat]);
-
-    // list files in the repo structure we already built (structure[chosenCat][chosenSub])
-    const files = structure[chosenCat] && structure[chosenCat][chosenSub] ? structure[chosenCat][chosenSub] : [];
-    if (!files || files.length === 0) {
-      alert('No files found in selected folder: ' + chosenCat + '/' + chosenSub);
-      return;
-    }
-
-    const chosenFile = sample(files);
-
-    const rawUrl = `${RAW_BASE}/images/${encodeURIComponent(chosenCat)}/${encodeURIComponent(chosenSub)}/${encodeURIComponent(chosenFile)}`;
-
-    // show info & image
-    pickedInfo.textContent = `${chosenCat} → ${chosenSub} → ${chosenFile}`;
-    pickedImg.src = rawUrl;
-    pickedImg.onload = () => { pickedFallback.textContent = ''; }
-    pickedImg.onerror = () => {
-      pickedFallback.textContent = 'Failed to load image from GitHub raw URL. Click copy and open the URL in a new tab.';
-    }
-    // store last URL for copy
-    pickedImg.dataset.lastUrl = rawUrl;
-  }
-
-  // copy image URL
-  function copyImageURL() {
-    const url = pickedImg.dataset.lastUrl;
-    if (!url) { alert('No image selected yet.'); return; }
-    navigator.clipboard?.writeText(url).then(() => {
-      copyURLBtn.textContent = 'Copied!';
-      setTimeout(()=>copyURLBtn.textContent = 'Copy image URL', 1200);
-    }).catch(()=>alert('Copy failed — open the URL manually: ' + url));
-  }
-
-  // handlers
-  refreshBtn.addEventListener('click', buildStructure);
-  generateBtn.addEventListener('click', generate);
-  copyURLBtn.addEventListener('click', copyImageURL);
-
-  // initial load
-  await buildStructure();
-
-})();
+// Init
+loadSubsections();
 </script>
+
 </body>
 </html>
