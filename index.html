@@ -33,7 +33,27 @@
 <div id="results"></div>
 
 <script>
-// CONFIG ------------------------------------------------------------
+function chooseWeightedSubfolder(folders) {
+    const weights = {
+        "Buyable": 5,
+        "DLCs": 4,
+        "FoundInRaid": 1,
+        "BossDrops": 1,
+        "WipeRewards": 1
+    };
+
+    let pool = [];
+
+    folders.forEach(folder => {
+        const w = weights[folder] || 1;
+        for (let i = 0; i < w; i++) {
+            pool.push(folder);
+        }
+    });
+
+    return pool[Math.floor(Math.random() * pool.length)];
+}
+    // CONFIG ------------------------------------------------------------
 const USER = "ke3g4n";
 const REPO = "GhostofTabor-Randomkit";
 const BRANCH = "main";
@@ -105,7 +125,7 @@ async function generate() {
             continue;
         }
 
-        const chosenSub = pick(enabledSubs);
+        const chosenSub = chooseWeightedSubfolder(enabledSubs);
 
         const files = await listDir(`images/${cat}/${chosenSub}`);
         const realFiles = files.filter(f => f.type === "file");
