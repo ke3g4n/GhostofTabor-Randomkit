@@ -1,0 +1,16 @@
+{
+  "Backpacks": {
+    "Buyable": ["bp1.png", "bp2.png"],
+    "FoundInRaid": ["bp_raid1.png"]
+  },
+  "Chestrigs": {
+    "Buyable": ["ch1.png"]
+  },
+  "Helmets": {
+    "BossDrops": ["h_boss1.png"]
+  },
+  "Weapons": {
+    "Buyable": ["w1.png","w2.png"],
+    "FoundInRaid": ["w_raid.png"]
+  }
+}
