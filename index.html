@@ -1,1 +1,127 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Random Gear Generator</title>
+    <style>
+        body { font-family: Arial; text-align: center; padding: 20px; }
+        img { max-width: 200px; display: block; margin: 10px auto; }
+        .section { margin-top: 30px; padding: 10px; border-top: 1px solid #ccc; }
+        .toggles { margin-bottom: 10px; }
+        button { padding: 12px 20px; font-size: 18px; margin-top: 20px; }
+    </style>
+</head>
+<body>
+
+<h1>Random Gear Generator</h1>
+
+<!-- TOGGLE SUBSECTIONS -->
+<h3>Select Subsections to Include</h3>
+
+<div class="toggles">
+    <label><input type="checkbox" id="fir" checked> Found In Raid</label><br>
+    <label><input type="checkbox" id="boss" checked> Boss Drops</label><br>
+    <label><input type="checkbox" id="dlc" checked> DLC</label><br>
+    <label><input type="checkbox" id="wipe" checked> Wipe Rewards</label><br>
+    <label><input type="checkbox" id="buy" checked> Buyable</label><br>
+</div>
+
+<button onclick="generateAll()">Generate Gear</button>
+
+<div id="result"></div>
+
+<script>
+    // -------------------------
+    // IMAGE DATABASE
+    // Replace these paths with your own image URLs.
+    // -------------------------
+    const gear = {
+        backpacks: {
+            fir: ["images/backpack_fir1.png", "images/backpack_fir2.png"],
+            boss: ["images/backpack_boss1.png"],
+            dlc: ["images/backpack_dlc1.png"],
+            wipe: ["images/backpack_wipe1.png"],
+            buy: ["images/backpack_buy1.png"]
+        },
+
+        chestrigs: {
+            fir: ["images/chest_fir1.png"],
+            boss: ["images/chest_boss1.png"],
+            dlc: ["images/chest_dlc1.png"],
+            wipe: ["images/chest_wipe1.png"],
+            buy: ["images/chest_buy1.png"]
+        },
+
+        weapons: {
+            fir: ["images/weapon_fir1.png"],
+            boss: ["images/weapon_boss1.png"],
+            dlc: ["images/weapon_dlc1.png"],
+            wipe: ["images/weapon_wipe1.png"],
+            buy: ["images/weapon_buy1.png"]
+        },
+
+        helmets: {
+            fir: ["images/helmet_fir1.png"],
+            boss: ["images/helmet_boss1.png"],
+            dlc: ["images/helmet_dlc1.png"],
+            wipe: ["images/helmet_wipe1.png"],
+            buy: ["images/helmet_buy1.png"]
+        }
+    };
+
+    // Random element helper
+    function pickRandom(list) {
+        return list[Math.floor(Math.random() * list.length)];
+    }
+
+    // Generate from subsections that are enabled
+    function generateFromCategory(category) {
+        let allowed = [];
+
+        if (document.getElementById("fir").checked) allowed = allowed.concat(category.fir);
+        if (document.getElementById("boss").checked) allowed = allowed.concat(category.boss);
+        if (document.getElementById("dlc").checked) allowed = allowed.concat(category.dlc);
+        if (document.getElementById("wipe").checked) allowed = allowed.concat(category.wipe);
+        if (document.getElementById("buy").checked) allowed = allowed.concat(category.buy);
+
+        if (allowed.length === 0) return null;
+
+        return pickRandom(allowed);
+    }
+
+    // Master generator
+    function generateAll() {
+        let html = "";
+
+        html += generateSection("Backpack", gear.backpacks);
+        html += generateSection("Chest Rig", gear.chestrigs);
+        html += generateSection("Weapon", gear.weapons);
+        html += generateSection("Helmet", gear.helmets);
+
+        document.getElementById("result").innerHTML = html;
+    }
+
+    // Builds display section
+    function generateSection(name, data) {
+        const img = generateFromCategory(data);
+
+        if (!img) {
+            return `
+                <div class="section">
+                    <h2>${name}</h2>
+                    <p>No subsections selected.</p>
+                </div>
+            `;
+        }
+
+        return `
+            <div class="section">
+                <h2>${name}</h2>
+                <img src="${img}">
+            </div>
+        `;
+    }
+</script>
+
+</body>
+</html>
 
