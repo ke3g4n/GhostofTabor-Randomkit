@@ -1,116 +1,93 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Ghosts of Tabor Kit Generator</title>
-    <style>
-        body { font-family: Arial; background: #111; color: white; text-align: center; }
-        img { max-width: 280px; margin: 15px; border-radius: 10px; }
-        .category { margin-bottom: 25px; }
-    </style>
-</head>
-<body>
+import os
+import random
+import json
 
-<h1>Ghosts of Tabor Random Kit Generator</h1>
+# ---------------------------------------------------
+# CONFIGURATION: Turn sub-sections on/off here
+# ---------------------------------------------------
+# Example structure – set True to include, False to exclude
 
-<!-- Checkboxes for filters -->
-<h3>Include sections:</h3>
-<label><input type="checkbox" id="buyable" checked> Buyable</label>
-<label><input type="checkbox" id="bossDrops" checked> Boss Drops</label>
-<label><input type="checkbox" id="foundInRaid" checked> Found In Raid</label>
-<label><input type="checkbox" id="dlc" checked> DLC</label>
-<label><input type="checkbox" id="wipeReward" checked> Wipe Rewards</label>
-
-<br><br>
-<button onclick="generate()">Generate Kit</button>
-
-<div id="results"></div>
-
-<script>
-const base = "images/";
-
-const paths = {
-    Backpacks: {
-        Buyable: "Backpacks/Buyable/"
+CONFIG = {
+    "Backpacks": {
+        "Buyable": True,
+        "FoundInRaid": True,
+        "BossDrops": False,
+        "DLCs": True,
+        "WipeReward": False
     },
-    Chestrigs: {
-        Boss: "Chestrigs/Boss/",
-        Buyable: "Chestrigs/Buyable/",
-        FoundInRaid: "Chestrigs/FoundInRaid/"
+    "Chestrigs": {
+        "Buyable": True,
+        "FoundInRaid": True,
+        "Boss": True,
+        "WipeReward": False
     },
-    Helmets: {
-        BossDrops: "Helmets/BossDrops/",
-        Buyable: "Helmets/Buyable/",
-        DLCs: "Helmets/DLCs/",
-        WipeReward: "Helmets/WipeReward/"
+    "Helmets": {
+        "Buyable": True,
+        "FoundInRaid": True,
+        "BossDrops": False,
+        "DLCs": True,
+        "WipeReward": False
     },
-    Weapons: {
-        BossDrops: "Weapons/BossDrops/",
-        Buyable: "Weapons/Buyable/",
-        DLC: "Weapons/DLC/",
-        FoundInRaid: "Weapons/FoundInRaid/",
-        WipeRewards: "Weapons/WipeRewards/"
+    "Weapons": {
+        "Buyable": True,
+        "FoundInRaid": True,
+        "BossDrops": False,
+        "DLC": True,
+        "WipeRewards": True
     }
-};
-
-function getRandom(arr) {
-    return arr[Math.floor(Math.random() * arr.length)];
 }
 
-async function getImagesFrom(folder) {
-    const apiURL = `https://api.github.com/repos/ke3g4n/GhostofTabor-Randomkit/contents/images/${folder}`;
-    const res = await fetch(apiURL);
-    const data = await res.json();
-    return data.filter(f => f.name.endsWith(".webp") || f.name.endsWith(".png") || f.name.endsWith(".jpg"))
-        .map(f => f.path);
-}
+# ---------------------------------------------------
+# MAIN FUNCTION
+# ---------------------------------------------------
 
-async function getRandomFromCategory(category, filters) {
-    let folders = paths[category];
-    let selectedFolders = [];
+def pick_random_item(base_dir="images"):
+    """
+    Randomly picks a category, then a sub-section (if enabled),
+    then a random file from that folder.
+    """
 
-    for (let s in folders) {
-        if (filters.includes(s.toLowerCase())) {
-            selectedFolders.push(folders[s]);
-        }
-    }
+    # Filter enabled categories
+    enabled_categories = [cat for cat in CONFIG.keys()]
 
-    if (selectedFolders.length === 0) return null;
+    if not enabled_categories:
+        raise Exception("No categories enabled in CONFIG!")
 
-    let randomFolder = getRandom(selectedFolders);
-    let images = await getImagesFrom(randomFolder);
+    # Choose a category at random
+    chosen_category = random.choice(enabled_categories)
 
-    if (images.length === 0) return null;
+    # Filter enabled sub-sections
+    enabled_subs = [sub for sub, enabled in CONFIG[chosen_category].items() if enabled]
 
-    return getRandom(images);
-}
+    if not enabled_subs:
+        raise Exception(f"No enabled subsections for {chosen_category}")
 
-async function generate() {
-    let filters = [];
-    if (buyable.checked) filters.push("buyable");
-    if (bossDrops.checked) filters.push("bossdrops");
-    if (foundInRaid.checked) filters.push("foundinraid");
-    if (dlc.checked) filters.push("dlc");
-    if (wipeReward.checked) filters.push("wipereward", "wiperewards");
+    chosen_sub = random.choice(enabled_subs)
 
-    const categories = ["Backpacks", "Chestrigs", "Helmets", "Weapons"];
+    # Build path to the folder
+    folder_path = os.path.join(base_dir, chosen_category, chosen_sub)
 
-    document.getElementById("results").innerHTML = "<h3>Generating...</h3>";
+    if not os.path.exists(folder_path):
+        raise FileNotFoundError(f"Folder does not exist: {folder_path}")
 
-    let html = "";
+    # Get list of files inside
+    files = [f for f in os.listdir(folder_path) if os.path.isfile(os.path.join(folder_path, f))]
 
-    for (let c of categories) {
-        let img = await getRandomFromCategory(c, filters);
-        if (img) {
-            html += `<div class='category'><h2>${c}</h2><img src="https://raw.githubusercontent.com/ke3g4n/GhostofTabor-Randomkit/main/${img}"></div>`;
-        } else {
-            html += `<div class='category'><h2>${c}</h2><p>No images found</p></div>`;
-        }
+    if not files:
+        raise Exception(f"No files found in: {folder_path}")
+
+    chosen_file = random.choice(files)
+
+    return {
+        "category": chosen_category,
+        "sub_section": chosen_sub,
+        "file": chosen_file,
+        "full_path": os.path.join(folder_path, chosen_file)
     }
 
-    document.getElementById("results").innerHTML = html;
-}
-
-</script>
-
-</body>
-</html>
+# ---------------------------------------------------
+# Example usage
+# ---------------------------------------------------
+if __name__ == "__main__":
+    result = pick_random_item()
+    print(json.dumps(result, indent=4))
